@@ -6,7 +6,7 @@ HOST = ''
 PORT = 5050
 
 screen_width, screen_height = pyautogui.size()
-client =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)i
+client =  socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 client.connect(socket, port)
 
 controller = mouse.Controller()

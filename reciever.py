@@ -1,6 +1,6 @@
 import socket
 import json
-from pyinput.mouse import Controller
+from pynput.mouse import Controller
 
 mouse = Controller()
 
