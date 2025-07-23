@@ -1,10 +1,11 @@
-import socket
 import json
+import socket
+
 from pynput.mouse import Controller
 
 mouse = Controller()
 
-HOST = '0.0.0.0'
+HOST = "0.0.0.0"
 PORT = 5050
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,5 +21,5 @@ while True:
     if not data:
         break
 
-    coords = json.loads(data.decode('utf-8'))
-    mouse.position = (coords['x'] - 1000, coords['y'])
+    coords = json.loads(data.decode("utf-8"))
+    mouse.position = (coords["x"] - 1000, coords["y"])
