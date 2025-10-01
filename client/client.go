@@ -7,8 +7,15 @@ import (
 	"os"
 )
 
+type InputEvent struct {
+	EventType string `json:"eventType"` // "mouse" or "keyboard"
+	Key       string `json:"key,omitempty"`
+	X         int    `json:"x,omitempty"`
+	Y         int    `json:"y,omitempty"`
+}
+
 func main() {
-	serverIP := "192.168.1.25" // CHANGE to your server’s LAN IP
+	serverIP := "192.168.1.210"
 	port := "8080"
 
 	conn, err := net.Dial("tcp", serverIP+":"+port)
