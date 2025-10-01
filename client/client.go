@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/go-vgo/robotgo"
+	hook "github.com/robotn/gohook"
 )
 
 type InputEvent struct {
@@ -18,7 +19,7 @@ type InputEvent struct {
 }
 
 func main() {
-	serverIP := "192.168.1.210"
+	serverIP := "192.168.1.210" // Change to your server's IP
 	port := "8080"
 
 	conn, err := net.Dial("tcp", serverIP+":"+port)
@@ -29,15 +30,20 @@ func main() {
 	defer conn.Close()
 
 	fmt.Println("[Client] Connected to server", serverIP)
+
 	reader := bufio.NewReader(conn)
 
 	lastX, lastY := -1, -1
-	keys := []string{"a", "s", "d", "w"} // Example keys to monitor
+
+	// Start global hook for keyboard events
+	evChan := hook.Start()
+	defer hook.End()
+
+	fmt.Println("[Client] Listening for mouse and keyboard events...")
 
 	for {
 		// Mouse position tracking
-		x, y := robotgo.GetMousePos()
-
+		x, y := robotgo.Location()
 		if x != lastX || y != lastY {
 			sendEvent(conn, InputEvent{
 				EventType: "mouse",
@@ -48,19 +54,19 @@ func main() {
 			lastX, lastY = x, y
 		}
 
-		// Key press tracking (polling method)
-		for _, key := range keys {
-			err := robotgo.KeyTap(key)
-			if err == nil {
+		// Keyboard tracking
+		select {
+		case ev := <-evChan:
+			if ev.Kind == hook.KeyDown {
 				sendEvent(conn, InputEvent{
 					EventType: "keyboard",
-					Key:       key,
+					Key:       string(ev.Keychar), // fixed conversion
 				})
 				readACK(reader)
 			}
+		default:
+			time.Sleep(10 * time.Millisecond) // reduce CPU usage
 		}
-
-		time.Sleep(10 * time.Millisecond) // ~100 checks/sec
 	}
 }
 
