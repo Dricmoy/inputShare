@@ -62,9 +62,15 @@ func handleConnection(conn net.Conn) {
 			fmt.Printf("[Server] Mouse moved to (%d, %d)\n", event.X, event.Y)
 		case "keyboard":
 			fmt.Printf("[Server] Key pressed: %s\n", event.Key)
+		default:
+			fmt.Printf("[Server] Unknown event: %+v\n", event)
 		}
 
-		// Send ACK to client
-		conn.Write([]byte("ACK\n"))
+		// Send ACK
+		_, err = conn.Write([]byte("ACK\n"))
+		if err != nil {
+			fmt.Println("[Server] Error sending ACK:", err)
+			break
+		}
 	}
 }

@@ -18,7 +18,7 @@ type InputEvent struct {
 }
 
 func main() {
-	serverIP := "192.168.1.210" // Change to your server IP
+	serverIP := "192.168.1.210"
 	port := "8080"
 
 	conn, err := net.Dial("tcp", serverIP+":"+port)
@@ -29,34 +29,38 @@ func main() {
 	defer conn.Close()
 
 	fmt.Println("[Client] Connected to server", serverIP)
-
 	reader := bufio.NewReader(conn)
 
-	for {
-		// Capture mouse position
-		x, y := robotgo.GetMousePos()
-		sendEvent(conn, InputEvent{
-			EventType: "mouse",
-			X:         x,
-			Y:         y,
-		})
-		readACK(reader)
+	lastX, lastY := -1, -1
+	keys := []string{"a", "s", "d", "w"} // Example keys to monitor
 
-		// Capture example key presses
-		keys := []string{"a", "s", "d", "w"}
+	for {
+		// Mouse position tracking
+		x, y := robotgo.GetMousePos()
+
+		if x != lastX || y != lastY {
+			sendEvent(conn, InputEvent{
+				EventType: "mouse",
+				X:         x,
+				Y:         y,
+			})
+			readACK(reader)
+			lastX, lastY = x, y
+		}
+
+		// Key press tracking (polling method)
 		for _, key := range keys {
-			if err := robotgo.KeyTap(key); err == nil {
+			err := robotgo.KeyTap(key)
+			if err == nil {
 				sendEvent(conn, InputEvent{
 					EventType: "keyboard",
 					Key:       key,
 				})
 				readACK(reader)
-			} else {
-				fmt.Printf("[Client] Error tapping key %s: %v\n", key, err)
 			}
 		}
 
-		time.Sleep(50 * time.Millisecond) // ~20 updates/sec
+		time.Sleep(10 * time.Millisecond) // ~100 checks/sec
 	}
 }
 
