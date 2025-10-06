@@ -1,4 +1,4 @@
-package com.inputshare.utils;
+package com.inputshare.enums;
 
 public enum LogTag {
     INFO("INFO"),

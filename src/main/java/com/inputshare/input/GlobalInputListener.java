@@ -2,8 +2,8 @@ package com.inputshare.input;
 
 import com.github.kwhat.jnativehook.keyboard.*;
 import com.github.kwhat.jnativehook.mouse.*;
-import com.inputshare.utils.GuiLogger;
-import com.inputshare.utils.LogTag;
+import com.inputshare.logger.GuiLogger;
+import com.inputshare.enums.LogTag;
 
 public class GlobalInputListener implements
         NativeKeyListener,

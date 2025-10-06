@@ -1,4 +1,6 @@
-package com.inputshare.utils;
+package com.inputshare.logger;
+
+import com.inputshare.enums.LogTag;
 
 import javax.swing.*;
 import javax.swing.text.DefaultCaret;
