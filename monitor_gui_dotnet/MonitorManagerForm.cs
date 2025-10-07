@@ -331,6 +331,48 @@ namespace monitor_gui_dotnet
             }
         }
 
+        // Stub for receiving external monitors (will be needed later on for allowing external PC's monitors to be configurable from this UI) 
+        public void ReceiveExternalMonitorInfo(string deviceId, List<Screen> externalScreens)
+        {
+            int minX = int.MaxValue, minY = int.MaxValue;
+            int maxX = int.MinValue, maxY = int.MinValue;
+
+            foreach (var screen in externalScreens)
+            {
+                minX = Math.Min(minX, screen.Bounds.X);
+                minY = Math.Min(minY, screen.Bounds.Y);
+                maxX = Math.Max(maxX, screen.Bounds.Right);
+                maxY = Math.Max(maxY, screen.Bounds.Bottom);
+            }
+
+            int totalWidth = maxX - minX;
+            int totalHeight = maxY - minY;
+
+            float scale = Math.Min((float)this.ClientSize.Width / totalWidth,
+                                    (float)this.ClientSize.Height / totalHeight) * 0.7f;
+
+            foreach (var screen in externalScreens)
+            {
+                int width = (int)(screen.Bounds.Width * scale);
+                int height = (int)(screen.Bounds.Height * scale);
+
+                int x = (int)((screen.Bounds.X - minX) * scale);
+                int y = (int)((screen.Bounds.Y - minY) * scale);
+
+                monitors.Add(new MonitorInfo
+                {
+                    Screen = screen,
+                    Rect = new Rectangle(x, y, width, height),
+                    LastSnappedPos = new Point(x, y),
+                    DeviceType = DeviceType.External,
+                    DeviceId = deviceId
+                });
+            }
+
+            RecenterMonitorLayout();
+            Invalidate();
+        }
+        
         private void StartIdentify()
         {
             StopIdentify();
@@ -390,46 +432,5 @@ namespace monitor_gui_dotnet
             identifyOverlays.Clear();
         }
 
-        // Stub for receiving external monitors (will be needed later on for allowing external PC's monitors to be configurable from this UI) 
-        public void ReceiveExternalMonitorInfo(string deviceId, List<Screen> externalScreens)
-        {
-            int minX = int.MaxValue, minY = int.MaxValue;
-            int maxX = int.MinValue, maxY = int.MinValue;
-
-            foreach (var screen in externalScreens)
-            {
-                minX = Math.Min(minX, screen.Bounds.X);
-                minY = Math.Min(minY, screen.Bounds.Y);
-                maxX = Math.Max(maxX, screen.Bounds.Right);
-                maxY = Math.Max(maxY, screen.Bounds.Bottom);
-            }
-
-            int totalWidth = maxX - minX;
-            int totalHeight = maxY - minY;
-
-            float scale = Math.Min((float)this.ClientSize.Width / totalWidth,
-                                    (float)this.ClientSize.Height / totalHeight) * 0.7f;
-
-            foreach (var screen in externalScreens)
-            {
-                int width = (int)(screen.Bounds.Width * scale);
-                int height = (int)(screen.Bounds.Height * scale);
-
-                int x = (int)((screen.Bounds.X - minX) * scale);
-                int y = (int)((screen.Bounds.Y - minY) * scale);
-
-                monitors.Add(new MonitorInfo
-                {
-                    Screen = screen,
-                    Rect = new Rectangle(x, y, width, height),
-                    LastSnappedPos = new Point(x, y),
-                    DeviceType = DeviceType.External,
-                    DeviceId = deviceId
-                });
-            }
-
-            RecenterMonitorLayout();
-            Invalidate();
-        }
     }
 }
