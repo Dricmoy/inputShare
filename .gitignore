@@ -12,6 +12,8 @@ obj/
 # Might be redundant need to clean later
 /bin/
 /obj/
+*.exe
+*.dll
 *.user
 *.suo
 *.userosscache
@@ -42,6 +44,7 @@ publish/
 # ========================
 # Visual Studio
 # ========================
+*.vs/
 .vs/
 *.DotSettings.user
 
