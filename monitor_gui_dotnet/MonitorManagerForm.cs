@@ -43,6 +43,10 @@ namespace monitor_gui_dotnet
             foreach (var monitor in monitors)
             {
                 Brush brush = monitor.Screen.Primary ? Brushes.LightBlue : Brushes.LightGray;
+
+                if (monitor == draggingMonitor)
+                    brush = new SolidBrush(Color.FromArgb(128, Color.Blue)); // semi-transparent
+
                 e.Graphics.FillRectangle(brush, monitor.Rect);
                 e.Graphics.DrawRectangle(Pens.Black, monitor.Rect);
 
@@ -196,11 +200,10 @@ namespace monitor_gui_dotnet
                 {
                     Rectangle candidateRect = new Rectangle(candidate.X, candidate.Y, dragging.Rect.Width, dragging.Rect.Height);
 
-                    // If snapping here would cause overlap, ignore it
                     if (!IsOverlapping(candidateRect, dragging))
                     {
                         int dist = Math.Abs(candidate.X - desired.X) + Math.Abs(candidate.Y - desired.Y);
-                        if (dist < bestDistance && dist < SnapThreshold)
+                        if (dist < bestDistance)
                         {
                             bestDistance = dist;
                             bestPosition = candidate;
@@ -208,7 +211,7 @@ namespace monitor_gui_dotnet
                     }
                     else
                     {
-                        // If it would overlap, snap instead to exactly that edge without overlap
+                        // Adjust to exactly edge without overlap
                         Rectangle adjustedRect = candidateRect;
 
                         if (candidate.X < dragging.Rect.X) // left snap
@@ -224,7 +227,7 @@ namespace monitor_gui_dotnet
                         if (!IsOverlapping(adjustedRect, dragging))
                         {
                             int dist = Math.Abs(adjustedRect.X - desired.X) + Math.Abs(adjustedRect.Y - desired.Y);
-                            if (dist < bestDistance && dist < SnapThreshold)
+                            if (dist < bestDistance)
                             {
                                 bestDistance = dist;
                                 bestPosition = adjustedRect.Location;
@@ -233,6 +236,11 @@ namespace monitor_gui_dotnet
                     }
                 }
             }
+
+            // If still overlapping at the chosen position, revert to last valid position
+            Rectangle testRect = new Rectangle(bestPosition.X, bestPosition.Y, dragging.Rect.Width, dragging.Rect.Height);
+            if (IsOverlapping(testRect, dragging))
+                return dragging.LastSnappedPos;
 
             return bestPosition;
         }
@@ -244,13 +252,8 @@ namespace monitor_gui_dotnet
                 int newX = e.X - dragOffset.X;
                 int newY = e.Y - dragOffset.Y;
 
-                Rectangle proposedRect = new Rectangle(newX, newY, draggingMonitor.Rect.Width, draggingMonitor.Rect.Height);
-
-                if (!IsOverlapping(proposedRect, draggingMonitor))
-                {
-                    draggingMonitor.Rect = proposedRect;
-                    draggingMonitor.LastSnappedPos = proposedRect.Location;
-                }
+                draggingMonitor.Rect = new Rectangle(newX, newY, draggingMonitor.Rect.Width, draggingMonitor.Rect.Height);
+                draggingMonitor.LastSnappedPos = draggingMonitor.Rect.Location;
 
                 Invalidate();
             }
@@ -260,15 +263,16 @@ namespace monitor_gui_dotnet
         {
             if (draggingMonitor != null)
             {
-                // When mouse is released, snap to nearest position
                 var snapPos = FindSnapPosition(draggingMonitor, draggingMonitor.Rect.Location);
                 draggingMonitor.Rect = new Rectangle(snapPos.X, snapPos.Y, draggingMonitor.Rect.Width, draggingMonitor.Rect.Height);
 
+                draggingMonitor.LastSnappedPos = draggingMonitor.Rect.Location;
                 draggingMonitor = null;
                 RecenterMonitorLayout();
                 Invalidate();
             }
         }
+
 
         private void MonitorManagerForm_MouseDown(object? sender, MouseEventArgs e)
         {
