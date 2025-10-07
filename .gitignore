@@ -1,6 +1,15 @@
 # ========================
 # .NET / C# build outputs
 # ========================
+# Build outputs
+bin/
+obj/
+
+# Ignore Visual Studio build output folders
+**/bin/
+**/obj/
+
+# Might be redundant need to clean later
 /bin/
 /obj/
 *.user
