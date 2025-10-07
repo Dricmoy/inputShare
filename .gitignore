@@ -1,15 +1,12 @@
-# Ignore build outputs
+# ========================
+# .NET / C# build outputs
+# ========================
 /bin/
 /obj/
-
-# Ignore Visual Studio and Rider project settings
-.vs/
 *.user
 *.suo
 *.userosscache
 *.sln.docstates
-
-# Ignore Visual Studio temporary files
 *.ncb
 *.aps
 *.ilk
@@ -20,46 +17,63 @@
 *.pch
 *.pdb
 
-# Ignore NuGet artifacts
+# ========================
+# NuGet artifacts
+# ========================
 *.nupkg
 *.snupkg
 packages/
 .nuget/
 
-# Ignore publish output
+# ========================
+# Publish output
+# ========================
 publish/
 
+# ========================
+# Visual Studio
+# ========================
+.vs/
+*.DotSettings.user
+
+# ========================
+# Rider IDE
+# ========================
+.idea/
+.idea_modules/
+
+# ========================
 # OS-specific files
+# ========================
 .DS_Store
 Thumbs.db
 
-# Rider IDE
-.idea/
-
-# Ignore generated form designer files if you want to regenerate them (optional)
-# monitor_gui_dotnet/Form1.Designer.cs
-# monitor_gui_dotnet/Form1.cs
-
-# Visual Studio Code settings
+# ========================
+# Visual Studio Code
+# ========================
 .vscode/
 
+# ========================
 # Test results
+# ========================
 TestResults/
 
-# Backup & temporary files
+# ========================
+# Backup / temp files
+# ========================
 *.bak
 *.backup
 *.tmp
 *.temp
 
-# Resharper
-_ReSharper*/
-*.DotSettings.user
-
-# Others
+# ========================
+# Miscellaneous
+# ========================
 *.vsix
 *.cache
 *.dbmdl
 
-# Rider caches
-.idea_modules/
+# ========================
+# Java build output
+# ========================
+target/

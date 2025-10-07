@@ -1,0 +1,17 @@
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\bin\Debug\net8.0-windows\monitor_gui_dotnet.exe
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\bin\Debug\net8.0-windows\monitor_gui_dotnet.deps.json
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\bin\Debug\net8.0-windows\monitor_gui_dotnet.runtimeconfig.json
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\bin\Debug\net8.0-windows\monitor_gui_dotnet.dll
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\bin\Debug\net8.0-windows\monitor_gui_dotnet.pdb
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.AssemblyInfoInputs.cache
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.AssemblyInfo.cs
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.csproj.CoreCompileInputs.cache
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.sourcelink.json
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.dll
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\refint\monitor_gui_dotnet.dll
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.pdb
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.genruntimeconfig.cache
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\ref\monitor_gui_dotnet.dll
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.MonitorManagerForm.resources
+C:\Users\dricb\Desktop\inputShare\monitor_gui_dotnet\obj\Debug\net8.0-windows\monitor_gui_dotnet.csproj.GenerateResource.cache
