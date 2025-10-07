@@ -278,11 +278,14 @@ namespace monitor_gui_dotnet
 
                 draggingMonitor.LastSnappedPos = draggingMonitor.Rect.Location;
                 draggingMonitor = null;
+
+                // Restore default cursor
+                this.Cursor = Cursors.Default;
+
                 RecenterMonitorLayout();
                 Invalidate();
             }
         }
-
 
         private void MonitorManagerForm_MouseDown(object? sender, MouseEventArgs e)
         {
@@ -292,6 +295,8 @@ namespace monitor_gui_dotnet
                 {
                     draggingMonitor = monitor;
                     dragOffset = new Point(e.X - monitor.Rect.X, e.Y - monitor.Rect.Y);
+                    Cursor.Current = Cursors.SizeAll;
+                    this.Cursor = Cursors.SizeAll;
                     break;
                 }
             }
