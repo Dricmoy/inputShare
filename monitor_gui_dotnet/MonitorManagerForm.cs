@@ -2,11 +2,23 @@ using System;
 using System.Drawing;
 using System.Windows.Forms;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace monitor_gui_dotnet
 {
     public class MonitorManagerForm : Form
     {
+        private const int WS_EX_TRANSPARENT = 0x20;
+        private const int WS_EX_LAYERED = 0x80000;
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        private const int GWL_EXSTYLE = -20;
+
         private enum DeviceType
         {
             Local,
@@ -20,6 +32,8 @@ namespace monitor_gui_dotnet
             public DeviceType DeviceType { get; set; } // Local or External
             public string DeviceId { get; set; } = "local"; // unique device id
         }
+        private bool identifyMode = false;
+        private List<Form> identifyOverlays = new List<Form>();
 
         private List<MonitorInfo> monitors = new List<MonitorInfo>();
         private MonitorInfo? draggingMonitor = null;
@@ -40,6 +54,21 @@ namespace monitor_gui_dotnet
 
             this.Resize += (s, e) => RecenterMonitorLayout();
             this.Layout += (s, e) => RecenterMonitorLayout();
+            Button identifyButton = new Button
+            {
+                Text = "Identify",
+                Dock = DockStyle.Bottom,
+                Height = 40
+            };
+            identifyButton.Click += (s, e) =>
+            {
+                identifyMode = !identifyMode;
+                if (identifyMode)
+                    StartIdentify();
+                else
+                    StopIdentify();
+            };
+            this.Controls.Add(identifyButton);
         }
 
         protected override void OnPaint(PaintEventArgs e)
@@ -300,6 +329,65 @@ namespace monitor_gui_dotnet
                     break;
                 }
             }
+        }
+
+        private void StartIdentify()
+        {
+            StopIdentify();
+
+            for (int i = 0; i < monitors.Count; i++)
+            {
+                var monitor = monitors[i];
+                int monitorNumber = i + 1; // Capture number for this overlay
+
+                Form overlay = new Form
+                {
+                    FormBorderStyle = FormBorderStyle.None,
+                    StartPosition = FormStartPosition.Manual,
+                    Bounds = monitor.Screen.Bounds,
+                    TopMost = true,
+                    ShowInTaskbar = false,
+                    BackColor = Color.LimeGreen, // For transparency key
+                    TransparencyKey = Color.LimeGreen
+                };
+
+                overlay.Paint += (sender, e) =>
+                {
+                    string text = monitorNumber.ToString(); // Use captured value
+                    Font font = new Font("Arial", 72, FontStyle.Bold);
+                    SizeF textSize = e.Graphics.MeasureString(text, font);
+
+                    float diameter = Math.Max(textSize.Width, textSize.Height) + 20;
+                    float circleX = (overlay.ClientSize.Width - diameter) / 2;
+                    float circleY = (overlay.ClientSize.Height - diameter) / 2;
+
+                    e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+                    e.Graphics.FillEllipse(Brushes.Black, circleX, circleY, diameter, diameter);
+
+                    e.Graphics.DrawString(
+                        text,
+                        font,
+                        Brushes.White,
+                        (overlay.ClientSize.Width - textSize.Width) / 2,
+                        (overlay.ClientSize.Height - textSize.Height) / 2);
+                };
+
+                // Make overlay click-through
+                int exStyle = GetWindowLong(overlay.Handle, GWL_EXSTYLE);
+                SetWindowLong(overlay.Handle, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
+
+                overlay.Show();
+                identifyOverlays.Add(overlay);
+            }
+        }
+
+        private void StopIdentify()
+        {
+            foreach (var overlay in identifyOverlays)
+            {
+                overlay.Close();
+            }
+            identifyOverlays.Clear();
         }
 
         // Stub for receiving external monitors (will be needed later on for allowing external PC's monitors to be configurable from this UI) 
