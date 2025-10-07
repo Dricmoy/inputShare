@@ -1,52 +1,65 @@
-# ========================
-# IntelliJ IDEA
-# ========================
-.idea/
-*.iml
-*.iws
-out/
-*.ipr
+# Ignore build outputs
+/bin/
+/obj/
 
-# ========================
-# Maven / Java
-# ========================
-target/
-*.class
-*.jar
-*.war
-*.ear
+# Ignore Visual Studio and Rider project settings
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
 
-# Maven specific
-log/
-dependency-reduced-pom.xml
-release.properties
-pom.xml.tag
-pom.xml.releaseBackup
-pom.xml.versionsBackup
-pom.xml.next
-buildNumber.properties
+# Ignore Visual Studio temporary files
+*.ncb
+*.aps
+*.ilk
+*.log
+*.tlog
+*.lastbuildstate
+*.obj
+*.pch
+*.pdb
 
-# ========================
+# Ignore NuGet artifacts
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Ignore publish output
+publish/
+
 # OS-specific files
-# ========================
 .DS_Store
 Thumbs.db
 
-# ========================
-# Logs and temp files
-# ========================
-*.log
+# Rider IDE
+.idea/
+
+# Ignore generated form designer files if you want to regenerate them (optional)
+# monitor_gui_dotnet/Form1.Designer.cs
+# monitor_gui_dotnet/Form1.cs
+
+# Visual Studio Code settings
+.vscode/
+
+# Test results
+TestResults/
+
+# Backup & temporary files
+*.bak
+*.backup
 *.tmp
 *.temp
 
-# ========================
-# JNativeHook / native library files
-# ========================
-*.dll
-*.so
-*.dylib
+# Resharper
+_ReSharper*/
+*.DotSettings.user
 
-# ========================
-# Other IDEs
-# ========================
-.vscode/
+# Others
+*.vsix
+*.cache
+*.dbmdl
+
+# Rider caches
+.idea_modules/
