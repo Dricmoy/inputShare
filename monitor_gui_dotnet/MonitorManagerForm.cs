@@ -7,17 +7,23 @@ namespace monitor_gui_dotnet
 {
     public class MonitorManagerForm : Form
     {
+        private enum DeviceType
+        {
+            Local,
+            External
+        }
         private class MonitorInfo
         {
             public required Screen Screen { get; set; }
             public Rectangle Rect { get; set; }
             public Point LastSnappedPos { get; set; } // store last valid snap position
+            public DeviceType DeviceType { get; set; } // Local or External
+            public string DeviceId { get; set; } = "local"; // unique device id
         }
 
         private List<MonitorInfo> monitors = new List<MonitorInfo>();
         private MonitorInfo? draggingMonitor = null;
         private Point dragOffset;
-        private const int SnapThreshold = 10;
 
         public MonitorManagerForm()
         {
@@ -45,12 +51,17 @@ namespace monitor_gui_dotnet
                 Brush brush = monitor.Screen.Primary ? Brushes.LightBlue : Brushes.LightGray;
 
                 if (monitor == draggingMonitor)
-                    brush = new SolidBrush(Color.FromArgb(128, Color.Blue)); // semi-transparent
+                    brush = new SolidBrush(Color.FromArgb(128, Color.Blue));
 
                 e.Graphics.FillRectangle(brush, monitor.Rect);
-                e.Graphics.DrawRectangle(Pens.Black, monitor.Rect);
 
-                string text = $"{monitor.Screen.DeviceName}\n{monitor.Screen.Bounds.Width}x{monitor.Screen.Bounds.Height}";
+                // Different border for local vs external monitors
+                Pen borderPen = monitor.DeviceType == DeviceType.Local ? Pens.Black : Pens.Green;
+                e.Graphics.DrawRectangle(borderPen, monitor.Rect);
+
+                string text = $"{monitor.Screen.DeviceName}\n{monitor.Screen.Bounds.Width}x{monitor.Screen.Bounds.Height}" +
+                              $"\n[{monitor.DeviceType}]";
+
                 e.Graphics.DrawString(text, this.Font, Brushes.Black, monitor.Rect.Location + new Size(5, 5));
             }
         }
@@ -75,7 +86,6 @@ namespace monitor_gui_dotnet
             int minX = int.MaxValue, minY = int.MaxValue;
             int maxX = int.MinValue, maxY = int.MinValue;
 
-            // Find bounding box of all monitors in Windows space
             foreach (var screen in screens)
             {
                 minX = Math.Min(minX, screen.Bounds.X);
@@ -87,11 +97,9 @@ namespace monitor_gui_dotnet
             int totalWidth = maxX - minX;
             int totalHeight = maxY - minY;
 
-            // Calculate scale to fit within window
             float scale = Math.Min((float)this.ClientSize.Width / totalWidth,
                                     (float)this.ClientSize.Height / totalHeight) * 0.7f;
 
-            // Store scaled positions relative to minX, minY
             foreach (var screen in screens)
             {
                 int width = (int)(screen.Bounds.Width * scale);
@@ -104,7 +112,9 @@ namespace monitor_gui_dotnet
                 {
                     Screen = screen,
                     Rect = new Rectangle(x, y, width, height),
-                    LastSnappedPos = new Point(x, y)
+                    LastSnappedPos = new Point(x, y),
+                    DeviceType = DeviceType.Local,
+                    DeviceId = "local"
                 });
             }
         }
@@ -287,5 +297,46 @@ namespace monitor_gui_dotnet
             }
         }
 
+        // Stub for receiving external monitors (will be needed later on for allowing external PC's monitors to be configurable from this UI) 
+        public void ReceiveExternalMonitorInfo(string deviceId, List<Screen> externalScreens)
+        {
+            int minX = int.MaxValue, minY = int.MaxValue;
+            int maxX = int.MinValue, maxY = int.MinValue;
+
+            foreach (var screen in externalScreens)
+            {
+                minX = Math.Min(minX, screen.Bounds.X);
+                minY = Math.Min(minY, screen.Bounds.Y);
+                maxX = Math.Max(maxX, screen.Bounds.Right);
+                maxY = Math.Max(maxY, screen.Bounds.Bottom);
+            }
+
+            int totalWidth = maxX - minX;
+            int totalHeight = maxY - minY;
+
+            float scale = Math.Min((float)this.ClientSize.Width / totalWidth,
+                                    (float)this.ClientSize.Height / totalHeight) * 0.7f;
+
+            foreach (var screen in externalScreens)
+            {
+                int width = (int)(screen.Bounds.Width * scale);
+                int height = (int)(screen.Bounds.Height * scale);
+
+                int x = (int)((screen.Bounds.X - minX) * scale);
+                int y = (int)((screen.Bounds.Y - minY) * scale);
+
+                monitors.Add(new MonitorInfo
+                {
+                    Screen = screen,
+                    Rect = new Rectangle(x, y, width, height),
+                    LastSnappedPos = new Point(x, y),
+                    DeviceType = DeviceType.External,
+                    DeviceId = deviceId
+                });
+            }
+
+            RecenterMonitorLayout();
+            Invalidate();
+        }
     }
 }
