@@ -91,7 +91,6 @@ namespace monitor_gui_dotnet
             this.Controls.Add(identifyButton);
         }
 
-
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
