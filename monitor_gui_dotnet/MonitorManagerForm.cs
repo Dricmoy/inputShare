@@ -510,27 +510,46 @@ namespace monitor_gui_dotnet
 
             if (sfd.ShowDialog() == DialogResult.OK)
             {
-                var layoutData = new
-                {
-                    layout = new List<object>()
-                };
+                var layoutData = new { layout = new List<object>() };
 
                 foreach (var m in monitors)
                 {
                     string prefix = m.DeviceType == DeviceType.Local ? "local-" : "external-";
                     int index = monitors.FindIndex(x => x == m) + 1;
+                    string myId = prefix + index;
+
+                    // We'll build a list of relative positions
+                    List<object> relatives = new List<object>();
+
+                    foreach (var other in monitors)
+                    {
+                        if (other == m) continue;
+
+                        string otherPrefix = other.DeviceType == DeviceType.Local ? "local-" : "external-";
+                        int otherIndex = monitors.FindIndex(x => x == other) + 1;
+                        string otherId = otherPrefix + otherIndex;
+
+                        // Determine simple up/down/left/right relation
+                        if (m.Rect.Bottom <= other.Rect.Top + 10 && m.Rect.Top < other.Rect.Top)
+                            relatives.Add(new { relation = "above", target = otherId });
+                        else if (m.Rect.Top >= other.Rect.Bottom - 10 && m.Rect.Top > other.Rect.Top)
+                            relatives.Add(new { relation = "below", target = otherId });
+                        else if (m.Rect.Right <= other.Rect.Left + 10 && m.Rect.Left < other.Rect.Left)
+                            relatives.Add(new { relation = "left-of", target = otherId });
+                        else if (m.Rect.Left >= other.Rect.Right - 10 && m.Rect.Left > other.Rect.Left)
+                            relatives.Add(new { relation = "right-of", target = otherId });
+                    }
 
                     layoutData.layout.Add(new
                     {
-                        id = prefix + index,
+                        id = myId,
                         deviceType = m.DeviceType.ToString(),
                         bounds = new
                         {
-                            x = m.Screen.Bounds.X,
-                            y = m.Screen.Bounds.Y,
                             width = m.Screen.Bounds.Width,
                             height = m.Screen.Bounds.Height
-                        }
+                        },
+                        relative = relatives
                     });
                 }
 
@@ -539,5 +558,7 @@ namespace monitor_gui_dotnet
                 MessageBox.Show("Layout saved successfully!", "Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
             }
         }
+
+
     }
 }
