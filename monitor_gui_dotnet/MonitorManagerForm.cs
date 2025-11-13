@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Management;
 using System.Runtime.InteropServices;
+using System.Text.Json;
 using System.Windows.Forms;
 
 namespace monitor_gui_dotnet
@@ -26,14 +27,16 @@ namespace monitor_gui_dotnet
             Local,
             External
         }
+
         private class MonitorInfo
         {
             public required Screen Screen { get; set; }
-            public Rectangle Rect { get; set; }
-            public Point LastSnappedPos { get; set; } // store last valid snap position
-            public DeviceType DeviceType { get; set; } // Local or External
-            public string DeviceId { get; set; } = "local"; // unique device id
+            public Rectangle Rect { get; set; }          // scaled GUI rectangle
+            public Point LastSnappedPos { get; set; }
+            public DeviceType DeviceType { get; set; }
+            public string DeviceId { get; set; } = "local";
         }
+
         private bool identifyMode = false;
         private List<Form> identifyOverlays = new List<Form>();
         private bool showMonitorDetails = false;
@@ -46,7 +49,7 @@ namespace monitor_gui_dotnet
         {
             this.Text = "Monitor Manager";
             this.Size = new Size(800, 600);
-            this.MinimumSize = new Size(600, 400); // ✅ Prevent resizing too small
+            this.MinimumSize = new Size(600, 400);
             this.DoubleBuffered = true;
 
             this.MouseDown += MonitorManagerForm_MouseDown;
@@ -89,8 +92,16 @@ namespace monitor_gui_dotnet
                     StopIdentify();
             };
             this.Controls.Add(identifyButton);
-        }
 
+            Button saveButton = new Button
+            {
+                Text = "Save Layout",
+                Dock = DockStyle.Bottom,
+                Height = 40
+            };
+            saveButton.Click += (s, e) => SaveMonitorLayout();
+            this.Controls.Add(saveButton);
+        }
 
         protected override void OnPaint(PaintEventArgs e)
         {
@@ -102,17 +113,15 @@ namespace monitor_gui_dotnet
             {
                 Rectangle rect = monitor.Rect;
 
-                // Chill background color
                 Color bgColor = monitor.Screen.Primary ? Color.FromArgb(200, 220, 240) : Color.FromArgb(230, 230, 230);
                 if (monitor == draggingMonitor)
                     bgColor = Color.FromArgb(180, 200, 230);
 
                 using (Brush brush = new SolidBrush(bgColor))
-                using (var path = CreateRoundedRectangle(rect, 6)) // small radius for subtle rounding
+                using (var path = CreateRoundedRectangle(rect, 6))
                 {
                     e.Graphics.FillPath(brush, path);
 
-                    // Border
                     Color borderColor = monitor.DeviceType == DeviceType.Local ? Color.DarkGray : Color.DarkGreen;
                     using (Pen borderPen = new Pen(borderColor, 1.5f))
                     {
@@ -121,7 +130,8 @@ namespace monitor_gui_dotnet
                 }
 
                 int monitorIndex = monitors.IndexOf(monitor);
-                string monitorIdentifier = (monitorIndex + 1).ToString();
+                string prefix = monitor.DeviceType == DeviceType.Local ? "Local-" : "External-";
+                string monitorIdentifier = prefix + (monitorIndex + 1);
 
                 if (showMonitorDetails)
                 {
@@ -219,7 +229,6 @@ namespace monitor_gui_dotnet
         {
             if (monitors.Count == 0) return;
 
-            // Compute bounding box of current layout
             int minX = int.MaxValue, minY = int.MaxValue, maxX = int.MinValue, maxY = int.MinValue;
             foreach (var monitor in monitors)
             {
@@ -246,12 +255,11 @@ namespace monitor_gui_dotnet
                 m.LastSnappedPos = m.Rect.Location;
             }
         }
-
+        
         private void RecenterMonitorLayout()
         {
             if (monitors.Count == 0) return;
 
-            // Find the bounding box of all monitors
             int minX = int.MaxValue, minY = int.MaxValue;
             int maxX = int.MinValue, maxY = int.MinValue;
 
@@ -269,7 +277,6 @@ namespace monitor_gui_dotnet
             int offsetX = (ClientSize.Width - groupWidth) / 2 - minX;
             int offsetY = (ClientSize.Height - groupHeight) / 2 - minY;
 
-            // Shift all monitors by offset
             foreach (var m in monitors)
             {
                 m.Rect = new Rectangle(
@@ -293,13 +300,12 @@ namespace monitor_gui_dotnet
             {
                 if (other == dragging) continue;
 
-                // Candidate positions to snap to
                 var candidatePositions = new[]
                 {
-                    new Point(other.Rect.Left - dragging.Rect.Width, other.Rect.Y), // Snap right side
-                    new Point(other.Rect.Right, other.Rect.Y),                     // Snap left side
-                    new Point(other.Rect.X, other.Rect.Bottom),                   // Snap above
-                    new Point(other.Rect.X, other.Rect.Top - dragging.Rect.Height) // Snap below
+                    new Point(other.Rect.Left - dragging.Rect.Width, other.Rect.Y),
+                    new Point(other.Rect.Right, other.Rect.Y),
+                    new Point(other.Rect.X, other.Rect.Bottom),
+                    new Point(other.Rect.X, other.Rect.Top - dragging.Rect.Height)
                 };
 
                 foreach (var candidate in candidatePositions)
@@ -317,17 +323,16 @@ namespace monitor_gui_dotnet
                     }
                     else
                     {
-                        // Adjust to exactly edge without overlap
                         Rectangle adjustedRect = candidateRect;
 
-                        if (candidate.X < dragging.Rect.X) // left snap
+                        if (candidate.X < dragging.Rect.X)
                             adjustedRect.X = other.Rect.Right;
-                        else if (candidate.X > dragging.Rect.X) // right snap
+                        else if (candidate.X > dragging.Rect.X)
                             adjustedRect.X = other.Rect.Left - dragging.Rect.Width;
 
-                        if (candidate.Y < dragging.Rect.Y) // top snap
+                        if (candidate.Y < dragging.Rect.Y)
                             adjustedRect.Y = other.Rect.Bottom;
-                        else if (candidate.Y > dragging.Rect.Y) // bottom snap
+                        else if (candidate.Y > dragging.Rect.Y)
                             adjustedRect.Y = other.Rect.Top - dragging.Rect.Height;
 
                         if (!IsOverlapping(adjustedRect, dragging))
@@ -343,7 +348,6 @@ namespace monitor_gui_dotnet
                 }
             }
 
-            // If still overlapping at the chosen position, revert to last valid position
             Rectangle testRect = new Rectangle(bestPosition.X, bestPosition.Y, dragging.Rect.Width, dragging.Rect.Height);
             if (IsOverlapping(testRect, dragging))
                 return dragging.LastSnappedPos;
@@ -375,7 +379,6 @@ namespace monitor_gui_dotnet
                 draggingMonitor.LastSnappedPos = draggingMonitor.Rect.Location;
                 draggingMonitor = null;
 
-                // Restore default cursor
                 this.Cursor = Cursors.Default;
 
                 RecenterMonitorLayout();
@@ -398,7 +401,6 @@ namespace monitor_gui_dotnet
             }
         }
 
-        // Stub for receiving external monitors (will be needed later on for allowing external PC's monitors to be configurable from this UI) 
         public void ReceiveExternalMonitorInfo(string deviceId, List<Screen> externalScreens)
         {
             int minX = int.MaxValue, minY = int.MaxValue;
@@ -447,7 +449,7 @@ namespace monitor_gui_dotnet
             for (int i = 0; i < monitors.Count; i++)
             {
                 var monitor = monitors[i];
-                int monitorNumber = i + 1; // Capture number for this overlay
+                int monitorNumber = i + 1;
 
                 Form overlay = new Form
                 {
@@ -456,13 +458,13 @@ namespace monitor_gui_dotnet
                     Bounds = monitor.Screen.Bounds,
                     TopMost = true,
                     ShowInTaskbar = false,
-                    BackColor = Color.LimeGreen, // For transparency key
+                    BackColor = Color.LimeGreen,
                     TransparencyKey = Color.LimeGreen
                 };
 
                 overlay.Paint += (sender, e) =>
                 {
-                    string text = monitorNumber.ToString(); // Use captured value
+                    string text = monitorNumber.ToString();
                     Font font = new Font("Arial", 72, FontStyle.Bold);
                     SizeF textSize = e.Graphics.MeasureString(text, font);
 
@@ -481,7 +483,6 @@ namespace monitor_gui_dotnet
                         (overlay.ClientSize.Height - textSize.Height) / 2);
                 };
 
-                // Make overlay click-through
                 int exStyle = GetWindowLong(overlay.Handle, GWL_EXSTYLE);
                 SetWindowLong(overlay.Handle, GWL_EXSTYLE, exStyle | WS_EX_LAYERED | WS_EX_TRANSPARENT);
 
@@ -499,5 +500,44 @@ namespace monitor_gui_dotnet
             identifyOverlays.Clear();
         }
 
+        private void SaveMonitorLayout()
+        {
+            SaveFileDialog sfd = new SaveFileDialog
+            {
+                Filter = "JSON Files|*.json",
+                Title = "Save Monitor Layout"
+            };
+
+            if (sfd.ShowDialog() == DialogResult.OK)
+            {
+                var layoutData = new
+                {
+                    layout = new List<object>()
+                };
+
+                foreach (var m in monitors)
+                {
+                    string prefix = m.DeviceType == DeviceType.Local ? "local-" : "external-";
+                    int index = monitors.FindIndex(x => x == m) + 1;
+
+                    layoutData.layout.Add(new
+                    {
+                        id = prefix + index,
+                        deviceType = m.DeviceType.ToString(),
+                        bounds = new
+                        {
+                            x = m.Screen.Bounds.X,
+                            y = m.Screen.Bounds.Y,
+                            width = m.Screen.Bounds.Width,
+                            height = m.Screen.Bounds.Height
+                        }
+                    });
+                }
+
+                string json = JsonSerializer.Serialize(layoutData, new JsonSerializerOptions { WriteIndented = true });
+                System.IO.File.WriteAllText(sfd.FileName, json);
+                MessageBox.Show("Layout saved successfully!", "Saved", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
     }
 }
