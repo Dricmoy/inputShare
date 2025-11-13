@@ -1,8 +1,10 @@
+﻿using Microsoft.Win32;
 using System;
-using System.Drawing;
-using System.Windows.Forms;
 using System.Collections.Generic;
+using System.Drawing;
+using System.Management;
 using System.Runtime.InteropServices;
+using System.Windows.Forms;
 
 namespace monitor_gui_dotnet
 {
@@ -34,6 +36,7 @@ namespace monitor_gui_dotnet
         }
         private bool identifyMode = false;
         private List<Form> identifyOverlays = new List<Form>();
+        private bool showMonitorDetails = false;
 
         private List<MonitorInfo> monitors = new List<MonitorInfo>();
         private MonitorInfo? draggingMonitor = null;
@@ -43,6 +46,7 @@ namespace monitor_gui_dotnet
         {
             this.Text = "Monitor Manager";
             this.Size = new Size(800, 600);
+            this.MinimumSize = new Size(600, 400); // ✅ Prevent resizing too small
             this.DoubleBuffered = true;
 
             this.MouseDown += MonitorManagerForm_MouseDown;
@@ -54,6 +58,22 @@ namespace monitor_gui_dotnet
 
             this.Resize += (s, e) => RecenterMonitorLayout();
             this.Layout += (s, e) => RecenterMonitorLayout();
+
+            CheckBox showDetailsCheckBox = new CheckBox
+            {
+                Text = "Show Details",
+                Checked = false,
+                Dock = DockStyle.Bottom,
+                Height = 20,
+                Padding = new Padding(20, 0, 0, 0)
+            };
+            showDetailsCheckBox.CheckedChanged += (s, e) =>
+            {
+                showMonitorDetails = showDetailsCheckBox.Checked;
+                Invalidate();
+            };
+            this.Controls.Add(showDetailsCheckBox);
+
             Button identifyButton = new Button
             {
                 Text = "Identify",
@@ -71,28 +91,75 @@ namespace monitor_gui_dotnet
             this.Controls.Add(identifyButton);
         }
 
+
         protected override void OnPaint(PaintEventArgs e)
         {
             base.OnPaint(e);
 
+            e.Graphics.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
+
             foreach (var monitor in monitors)
             {
-                Brush brush = monitor.Screen.Primary ? Brushes.LightBlue : Brushes.LightGray;
+                Rectangle rect = monitor.Rect;
 
+                // Chill background color
+                Color bgColor = monitor.Screen.Primary ? Color.FromArgb(200, 220, 240) : Color.FromArgb(230, 230, 230);
                 if (monitor == draggingMonitor)
-                    brush = new SolidBrush(Color.FromArgb(128, Color.Blue));
+                    bgColor = Color.FromArgb(180, 200, 230);
 
-                e.Graphics.FillRectangle(brush, monitor.Rect);
+                using (Brush brush = new SolidBrush(bgColor))
+                using (var path = CreateRoundedRectangle(rect, 6)) // small radius for subtle rounding
+                {
+                    e.Graphics.FillPath(brush, path);
 
-                // Different border for local vs external monitors
-                Pen borderPen = monitor.DeviceType == DeviceType.Local ? Pens.Black : Pens.Green;
-                e.Graphics.DrawRectangle(borderPen, monitor.Rect);
+                    // Border
+                    Color borderColor = monitor.DeviceType == DeviceType.Local ? Color.DarkGray : Color.DarkGreen;
+                    using (Pen borderPen = new Pen(borderColor, 1.5f))
+                    {
+                        e.Graphics.DrawPath(borderPen, path);
+                    }
+                }
 
-                string text = $"{monitor.Screen.DeviceName}\n{monitor.Screen.Bounds.Width}x{monitor.Screen.Bounds.Height}" +
-                              $"\n[{monitor.DeviceType}]";
+                int monitorIndex = monitors.IndexOf(monitor);
+                string monitorIdentifier = (monitorIndex + 1).ToString();
 
-                e.Graphics.DrawString(text, this.Font, Brushes.Black, monitor.Rect.Location + new Size(5, 5));
+                if (showMonitorDetails)
+                {
+                    string text = $"{monitorIdentifier}\n{monitor.Screen.Bounds.Width}x{monitor.Screen.Bounds.Height}\n[{monitor.DeviceType}]";
+                    using (Brush textBrush = new SolidBrush(Color.Black))
+                    {
+                        e.Graphics.DrawString(text, this.Font, textBrush, rect.X + 6, rect.Y + 6);
+                    }
+                }
+                else
+                {
+                    using (Font font = new Font("Arial", 16, FontStyle.Bold))
+                    using (StringFormat sf = new StringFormat())
+                    {
+                        sf.Alignment = StringAlignment.Center;
+                        sf.LineAlignment = StringAlignment.Center;
+
+                        using (Brush textBrush = new SolidBrush(Color.Black))
+                        {
+                            e.Graphics.DrawString(monitorIdentifier, font, textBrush, rect, sf);
+                        }
+                    }
+                }
             }
+        }
+
+        private System.Drawing.Drawing2D.GraphicsPath CreateRoundedRectangle(Rectangle rect, int radius)
+        {
+            var path = new System.Drawing.Drawing2D.GraphicsPath();
+            int diameter = radius * 2;
+
+            path.AddArc(rect.X, rect.Y, diameter, diameter, 180, 90);
+            path.AddArc(rect.Right - diameter, rect.Y, diameter, diameter, 270, 90);
+            path.AddArc(rect.Right - diameter, rect.Bottom - diameter, diameter, diameter, 0, 90);
+            path.AddArc(rect.X, rect.Bottom - diameter, diameter, diameter, 90, 90);
+            path.CloseFigure();
+
+            return path;
         }
 
         private bool IsOverlapping(Rectangle rect, MonitorInfo ignoreMonitor)
@@ -229,11 +296,11 @@ namespace monitor_gui_dotnet
                 // Candidate positions to snap to
                 var candidatePositions = new[]
                 {
-            new Point(other.Rect.Left - dragging.Rect.Width, other.Rect.Y), // Snap right side
-            new Point(other.Rect.Right, other.Rect.Y),                     // Snap left side
-            new Point(other.Rect.X, other.Rect.Bottom),                   // Snap above
-            new Point(other.Rect.X, other.Rect.Top - dragging.Rect.Height) // Snap below
-        };
+                    new Point(other.Rect.Left - dragging.Rect.Width, other.Rect.Y), // Snap right side
+                    new Point(other.Rect.Right, other.Rect.Y),                     // Snap left side
+                    new Point(other.Rect.X, other.Rect.Bottom),                   // Snap above
+                    new Point(other.Rect.X, other.Rect.Top - dragging.Rect.Height) // Snap below
+                };
 
                 foreach (var candidate in candidatePositions)
                 {
@@ -372,7 +439,7 @@ namespace monitor_gui_dotnet
             RecenterMonitorLayout();
             Invalidate();
         }
-        
+
         private void StartIdentify()
         {
             StopIdentify();
